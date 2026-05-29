@@ -1,0 +1,33 @@
+# Node modules (CRITICAL - ignore these!)
+node_modules/
+**/node_modules/
+.next/
+**/.next/
+out/
+**/out/
+
+# Python
+venv/
+**/venv/
+__pycache__/
+**/__pycache__/
+*.pyc
+migrations/
+!**/migrations/__init__.py
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Database
+*.sqlite3
+*.db
+
+# IDE
+.vscode/
+.idea/
+.DS_Store
+
+# Logs
+*.log

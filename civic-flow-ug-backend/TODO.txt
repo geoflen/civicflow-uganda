@@ -1,0 +1,41 @@
+Step 9- 12 :Celery task - function right now is in routing service - location wasnt clear.
+
+step 14 - API structure  recomended versioning
+
+
+19. MOST IMPORTANT IMPLEMENTATION PRIORITY
+
+Build in THIS order:
+
+PRIORITY 1
+auth
+user roles
+complaint submission
+PRIORITY 2
+complaint listing
+status workflow
+routing
+PRIORITY 3
+dashboards
+analytics
+maps
+PRIORITY 4
+escalations
+notifications
+audit logs
+
+
+
+
+
+#Step 1: Install GDAL system library
+#bash
+#brew install gdal
+#Step 2: Add GDAL to PATH (in ~/.zshrc)
+#bash
+#echo 'export PATH="/usr/local/opt/gdal/bin:$PATH"' >> ~/.zshrc
+#echo 'export LDFLAGS="-L/usr/local/opt/gdal/lib"' >> ~/.zshrc
+#echo 'export CPPFLAGS="-I/usr/local/opt/gdal/include"' >> ~/.zshrc
+#Step 3: Reload shell configuration
+#bash
+#source ~/.zshrc
