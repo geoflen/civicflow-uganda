@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 type Props = {
+  initialCategory?: string;
   onCreated?: (ticketNumber: string) => void;
 };
 
@@ -19,7 +20,10 @@ const categories = [
 
 const districts = ["Kampala", "Wakiso", "Gulu", "Mbarara", "Jinja", "Arua", "Mbale"];
 
-export default function ComplaintForm({ onCreated }: Props) {
+export default function ComplaintForm({
+  initialCategory,
+  onCreated,
+}: Props) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("");
