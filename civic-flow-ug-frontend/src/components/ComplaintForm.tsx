@@ -19,6 +19,12 @@ const categories = [
 ];
 
 const districts = ["Kampala", "Wakiso", "Gulu", "Mbarara", "Jinja", "Arua", "Mbale"];
+const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+
+function normalizeCategory(initialCategory?: string) {
+  if (!initialCategory) return "";
+  return categories.find((item) => item.toLowerCase() === initialCategory.toLowerCase()) || "";
+}
 
 export default function ComplaintForm({
   initialCategory,
@@ -26,15 +32,21 @@ export default function ComplaintForm({
 }: Props) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [category, setCategory] = useState("");
+  const [category, setCategory] = useState(() => normalizeCategory(initialCategory));
   const [district, setDistrict] = useState("");
   const [addressText, setAddressText] = useState("");
   const [latitude, setLatitude] = useState("");
   const [longitude, setLongitude] = useState("");
   const [contactPhone, setContactPhone] = useState("");
+  const [attachments, setAttachments] = useState<File[]>([]);
   const [anonymous, setAnonymous] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  function formatFileSize(size: number) {
+    if (size < 1024 * 1024) return `${Math.round(size / 1024)} KB`;
+    return `${(size / (1024 * 1024)).toFixed(1)} MB`;
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -42,30 +54,31 @@ export default function ComplaintForm({
     setError(null);
 
     try {
-      // The backend currently expects related IDs for category/status/priority.
-      // This payload preserves the intended intake shape until lookup loading is wired in.
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ""}/api/v1/complaints/`, {
+      const formData = new FormData();
+      formData.append("title", title);
+      formData.append("description", description);
+      formData.append("category", category);
+      formData.append("district", district);
+      formData.append("address_text", addressText);
+      if (latitude) formData.append("latitude", latitude);
+      if (longitude) formData.append("longitude", longitude);
+      formData.append("contact_phone", anonymous ? "" : contactPhone);
+      formData.append("is_anonymous", String(anonymous));
+      attachments.forEach((file) => formData.append("attachments", file));
+
+      const res = await fetch(`${apiBaseUrl}/api/v1/complaints/public/`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          title,
-          description,
-          category,
-          district,
-          address_text: addressText,
-          latitude: latitude || null,
-          longitude: longitude || null,
-          contact_phone: anonymous ? "" : contactPhone,
-          is_anonymous: anonymous,
-        }),
+        body: formData,
         credentials: "include",
       });
 
       if (!res.ok) {
         const payload = await res.json().catch(() => ({}));
-        throw new Error(payload.detail || "Failed to submit complaint");
+        const firstFieldError = Object.values(payload).flat().at(0);
+        throw new Error(
+          payload.detail ||
+            (typeof firstFieldError === "string" ? firstFieldError : "Failed to submit complaint")
+        );
       }
 
       const data = await res.json();
@@ -228,10 +241,30 @@ export default function ComplaintForm({
         </section>
 
         <section className="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-4">
-          <p className="text-sm font-medium text-slate-800">Attachments</p>
-          <p className="mt-1 text-sm leading-6 text-slate-500">
-            Photo and video upload will connect to S3-compatible storage. For now, officers can still triage from the written report.
-          </p>
+          <label className="block text-sm font-medium text-slate-800" htmlFor="complaint-attachments">
+            Attach photos or videos
+          </label>
+          <input
+            id="complaint-attachments"
+            type="file"
+            accept="image/*,video/*"
+            multiple
+            className="mt-3 block w-full text-sm text-slate-700 file:mr-4 file:h-10 file:rounded-md file:border-0 file:bg-blue-800 file:px-4 file:text-sm file:font-semibold file:text-white hover:file:bg-blue-900"
+            onChange={(e) => setAttachments(Array.from(e.target.files || []))}
+          />
+          {attachments.length > 0 && (
+            <div className="mt-3 space-y-2">
+              {attachments.map((file) => (
+                <div
+                  key={`${file.name}-${file.lastModified}`}
+                  className="flex items-center justify-between gap-3 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm"
+                >
+                  <span className="min-w-0 truncate font-medium text-slate-700">{file.name}</span>
+                  <span className="shrink-0 text-slate-500">{formatFileSize(file.size)}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </section>
 
         {error && (

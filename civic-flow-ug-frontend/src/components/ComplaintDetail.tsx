@@ -3,6 +3,13 @@
 import { useMemo, useState } from "react";
 import Timeline from "./Timeline";
 
+type Attachment = {
+  id: string;
+  file_url: string;
+  file_type: string;
+  uploaded_at: string;
+};
+
 export type ComplaintDetailRecord = {
   id: string;
   ticket_number: string;
@@ -19,6 +26,8 @@ export type ComplaintDetailRecord = {
   longitude?: number | string | null;
   is_anonymous?: boolean;
   address_text?: string;
+  contact_phone?: string;
+  attachments?: Attachment[];
   sla_due_at?: string | null;
   created_at?: string;
   updated_at?: string;
@@ -34,6 +43,7 @@ const tabs = [
   { key: "escalations", label: "Escalations" },
   { key: "notes", label: "Internal Notes" },
 ];
+const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 function relatedName(value: ComplaintDetailRecord["agency"] | ComplaintDetailRecord["district"]) {
   if (!value) return "-";
@@ -47,8 +57,20 @@ function statusClass(status?: string) {
   return "border-blue-200 bg-blue-50 text-blue-700";
 }
 
+function attachmentUrl(fileUrl: string) {
+  if (fileUrl.startsWith("http://") || fileUrl.startsWith("https://")) return fileUrl;
+  return `${apiBaseUrl}${fileUrl.startsWith("/") ? fileUrl : `/${fileUrl}`}`;
+}
+
+function attachmentLabel(attachment: Attachment) {
+  if (attachment.file_type.startsWith("image/")) return "Photo evidence";
+  if (attachment.file_type.startsWith("video/")) return "Video evidence";
+  return "Attachment";
+}
+
 export default function ComplaintDetail({ complaint }: Props) {
   const [activeTab, setActiveTab] = useState("activity");
+  const [previewAttachment, setPreviewAttachment] = useState<Attachment | null>(null);
 
   const locationLabel = useMemo(() => {
     if (complaint.address_text) return complaint.address_text;
@@ -115,7 +137,44 @@ export default function ComplaintDetail({ complaint }: Props) {
           <div className="p-4 sm:p-6">
             {activeTab === "activity" && <Timeline />}
             {activeTab === "attachments" && (
-              <EmptyPanel title="No attachments uploaded" text="Evidence files will appear here after S3-compatible storage is connected." />
+              complaint.attachments?.length ? (
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {complaint.attachments.map((attachment) => (
+                    <button
+                      key={attachment.id}
+                      type="button"
+                      className="overflow-hidden rounded-lg border border-slate-200 bg-white text-left shadow-sm transition hover:border-blue-200 hover:bg-blue-50"
+                      onClick={() => setPreviewAttachment(attachment)}
+                    >
+                      <div className="aspect-video bg-slate-100">
+                        {attachment.file_type.startsWith("image/") ? (
+                          <img
+                            src={attachmentUrl(attachment.file_url)}
+                            alt={attachmentLabel(attachment)}
+                            className="h-full w-full object-cover"
+                          />
+                        ) : attachment.file_type.startsWith("video/") ? (
+                          <video
+                            src={attachmentUrl(attachment.file_url)}
+                            className="h-full w-full object-cover"
+                            muted
+                          />
+                        ) : (
+                          <div className="flex h-full items-center justify-center text-sm font-semibold text-slate-500">
+                            Attachment
+                          </div>
+                        )}
+                      </div>
+                      <div className="p-3">
+                        <p className="truncate text-sm font-semibold text-slate-950">{attachmentLabel(attachment)}</p>
+                        <p className="mt-1 text-xs text-slate-500">{attachment.file_type}</p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <EmptyPanel title="No attachments uploaded" text="Evidence files will appear here after citizens upload photos or videos." />
+              )
             )}
             {activeTab === "escalations" && (
               <div className="space-y-3">
@@ -159,6 +218,67 @@ export default function ComplaintDetail({ complaint }: Props) {
           </div>
         </section>
       </aside>
+
+      {previewAttachment && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Attachment preview"
+          onClick={() => setPreviewAttachment(null)}
+        >
+          <div
+            className="max-h-[92vh] w-full max-w-5xl overflow-hidden rounded-lg bg-white shadow-2xl"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="flex items-center justify-between gap-3 border-b border-slate-200 px-4 py-3">
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold text-slate-950">{attachmentLabel(previewAttachment)}</p>
+                <p className="text-xs text-slate-500">{previewAttachment.file_type}</p>
+              </div>
+              <div className="flex shrink-0 items-center gap-2">
+                <a
+                  href={attachmentUrl(previewAttachment.file_url)}
+                  download
+                  className="rounded-md bg-blue-800 px-3 py-2 text-sm font-semibold text-white transition hover:bg-blue-900"
+                >
+                  Download
+                </a>
+                <button
+                  type="button"
+                  className="rounded-md border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                  onClick={() => setPreviewAttachment(null)}
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+
+            <div className="flex max-h-[78vh] items-center justify-center bg-slate-100 p-3">
+              {previewAttachment.file_type.startsWith("image/") ? (
+                <img
+                  src={attachmentUrl(previewAttachment.file_url)}
+                  alt={attachmentLabel(previewAttachment)}
+                  className="max-h-[74vh] max-w-full rounded-md object-contain"
+                />
+              ) : previewAttachment.file_type.startsWith("video/") ? (
+                <video
+                  src={attachmentUrl(previewAttachment.file_url)}
+                  className="max-h-[74vh] max-w-full rounded-md"
+                  controls
+                />
+              ) : (
+                <a
+                  href={attachmentUrl(previewAttachment.file_url)}
+                  className="rounded-md bg-white px-4 py-3 text-sm font-semibold text-blue-800 shadow-sm"
+                >
+                  Open attachment
+                </a>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

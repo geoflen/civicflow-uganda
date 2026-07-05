@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 import os
+import platform
 from pathlib import Path
 import environ 
 import dj_database_url
@@ -98,17 +99,27 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
 # Database
+#DATABASES = {
+#    'default': {
+#       'ENGINE': 'django.contrib.gis.db.backends.postgis',
+#       'NAME': env('POSTGRES_DB'),
+#       'USER': env('POSTGRES_USER'),
+#       'PASSWORD': env('POSTGRES_PASSWORD'),
+#       'HOST': env('POSTGRES_HOST'),
+#        'PORT': env('POSTGRES_PORT'),
+#   }
+#}
+
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': env('POSTGRES_DB'),
-        'USER': env('POSTGRES_USER'),
-        'PASSWORD': env('POSTGRES_PASSWORD'),
-        'HOST': env('POSTGRES_HOST'),
-        'PORT': env('POSTGRES_PORT'),
+    "default": {
+        "ENGINE": "django.contrib.gis.db.backends.postgis",
+        "NAME": "civicflow",
+        "USER": "postgres",
+        "PASSWORD": "postgres",
+        "HOST": "localhost",
+        "PORT": "5433",
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
@@ -145,6 +156,8 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
 STATIC_URL = 'static/'
+MEDIA_URL = 'media/'
+MEDIA_ROOT = BASE_DIR / 'media'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
@@ -158,3 +171,6 @@ REST_FRAMEWORK = {
 }
 
 AUTH_USER_MODEL = "users.User"
+
+GDAL_LIBRARY_PATH = "/usr/local/lib/libgdal.dylib"
+GEOS_LIBRARY_PATH = "/usr/local/lib/libgeos_c.dylib"

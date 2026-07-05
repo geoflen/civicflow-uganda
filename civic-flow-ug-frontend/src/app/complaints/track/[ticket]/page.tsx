@@ -5,6 +5,8 @@ import { useParams } from "next/navigation";
 import ComplaintDetail, { type ComplaintDetailRecord } from "../../../../components/ComplaintDetail";
 import Sidebar from "../../../../components/Sidebar";
 
+const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+
 export default function TrackTicketPage() {
   const params = useParams();
   const ticket = params?.ticket as string;
@@ -19,7 +21,7 @@ export default function TrackTicketPage() {
       setLoading(true);
       setError(null);
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ""}/api/v1/complaints/track/${ticket}/`);
+        const res = await fetch(`${apiBaseUrl}/api/v1/complaints/track/${ticket}/`);
         if (!res.ok) throw new Error("Ticket not found");
         const data = await res.json();
         if (mounted) setComplaint(data as ComplaintDetailRecord);

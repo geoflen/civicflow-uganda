@@ -108,6 +108,7 @@ class Complaint(models.Model):
     longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
     location_geom = gis_models.PointField(null=True, blank=True, geography=True, srid=4326)
     address_text = models.TextField(blank=True)
+    contact_phone = models.CharField(max_length=20, blank=True)
     is_anonymous = models.BooleanField(default=False)
     sla_due_at = models.DateTimeField(null=True, blank=True)
     resolved_at = models.DateTimeField(null=True, blank=True)

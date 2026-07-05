@@ -39,3 +39,7 @@ audit logs
 #Step 3: Reload shell configuration
 #bash
 #source ~/.zshrc
+
+
+Accesing Docker postgresql
+     PGPASSWORD=postgres /Library/PostgreSQL/17/bin/psql -h localhost -p 5433 -U postgres -d civicflow
